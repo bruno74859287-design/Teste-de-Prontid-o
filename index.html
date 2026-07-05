@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teste de Prontidão Operacional</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --amarelo: #F5C518; --amarelo-dark: #D4A80F;
+    --cinza-escuro: #1A1A2E; --cinza-medio: #2D2D44;
+    --cinza-card: #242438; --verde: #2ECC71;
+    --vermelho: #E74C3C; --laranja: #F39C12;
+    --branco: #F0F0F0; --texto-muted: #9A9AB0;
+  }
+  body { font-family:'Inter',sans-serif; background:var(--cinza-escuro); color:var(--branco); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:0 0 40px; }
+  .header { width:100%; background:var(--cinza-medio); padding:16px 20px; display:flex; align-items:center; gap:12px; border-bottom:3px solid var(--amarelo); margin-bottom:28px; }
+  .header-icon { font-size:28px; }
+  .header-title { font-size:15px; font-weight:700; letter-spacing:0.5px; }
+  .header-sub { font-size:12px; color:var(--texto-muted); margin-top:2px; }
+  .tela { display:none; width:100%; max-width:480px; padding:0 16px; animation:fadeIn 0.3s ease; }
+  .tela.ativa { display:block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .progresso-wrap { margin-bottom:20px; }
+  .progresso-label { font-size:12px; color:var(--texto-muted); margin-bottom:6px; display:flex; justify-content:space-between; }
+  .barra-bg { background:var(--cinza-medio); border-radius:99px; height:6px; overflow:hidden; }
+  .barra-fill { height:100%; background:var(--amarelo); border-radius:99px; transition:width 0.4s ease; }
+  .pergunta-num { font-size:11px; font-weight:700; color:var(--amarelo); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; }
+  .pergunta-texto { font-size:20px; font-weight:700; line-height:1.35; margin-bottom:24px; }
+  .pergunta-icone { font-size:42px; display:block; margin-bottom:14px; }
+  .opcoes { display:flex; flex-direction:column; gap:12px; }
+  .opcao-btn { background:var(--cinza-card); border:2px solid transparent; border-radius:14px; padding:16px 18px; color:var(--branco); font-size:16px; font-family:'Inter',sans-serif; font-weight:500; cursor:pointer; text-align:left; display:flex; align-items:center; gap:14px; transition:border-color 0.2s,background 0.2s; }
+  .opcao-btn:hover { border-color:var(--amarelo); background:#2D2D44; }
+  .opcao-btn.selecionada { border-color:var(--amarelo); background:rgba(245,197,24,0.12); }
+  .opcao-icone { font-size:22px; }
+  .slider-wrap { padding:8px 0; }
+  input[type=range] { -webkit-appearance:none; width:100%; height:8px; border-radius:99px; background:var(--cinza-medio); outline:none; margin-bottom:12px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:28px; height:28px; border-radius:50%; background:var(--amarelo); cursor:pointer; border:3px solid var(--cinza-escuro); }
+  .slider-labels { display:flex; justify-content:space-between; font-size:12px; color:var(--texto-muted); }
+  .slider-valor { text-align:center; font-size:32px; font-weight:800; color:var(--amarelo); margin-bottom:4px; }
+  .slider-descricao { text-align:center; font-size:14px; color:var(--texto-muted); margin-bottom:16px; min-height:20px; }
+  .btn-avancar { width:100%; padding:16px; background:var(--amarelo); color:var(--cinza-escuro); border:none; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; margin-top:24px; letter-spacing:0.3px; transition:background 0.2s,transform 0.1s; }
+  .btn-avancar:hover { background:var(--amarelo-dark); }
+  .btn-avancar:active { transform:scale(0.98); }
+  .btn-avancar:disabled { background:var(--cinza-medio); color:var(--texto-muted); cursor:not-allowed; }
+  .bv-wrap { text-align:center; padding:20px 0; }
+  .bv-icon { font-size:72px; margin-bottom:16px; display:block; }
+  .bv-titulo { font-size:26px; font-weight:800; margin-bottom:10px; }
+  .bv-sub { color:var(--texto-muted); font-size:15px; line-height:1.6; margin-bottom:28px; }
+  .input-nome { width:100%; background:var(--cinza-card); border:2px solid var(--cinza-medio); border-radius:12px; padding:16px; color:var(--branco); font-size:16px; font-family:'Inter',sans-serif; margin-bottom:12px; outline:none; transition:border-color 0.2s; }
+  .input-nome:focus { border-color:var(--amarelo); }
+  .input-nome::placeholder { color:var(--texto-muted); }
+
+  /* JOGO */
+  .jogo-instrucao { font-size:14px; color:var(--texto-muted); text-align:center; margin-bottom:16px; line-height:1.5; }
+  .jogo-titulo { font-size:22px; font-weight:800; text-align:center; margin-bottom:8px; }
+  .jogo-area { background:var(--cinza-card); border-radius:20px; margin-bottom:16px; position:relative; height:220px; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .jogo-countdown { font-size:64px; font-weight:800; color:var(--amarelo); text-align:center; animation:pulse 1s ease infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
+  /* Barra de tempo */
+  .tempo-bar-wrap { width:100%; position:absolute; bottom:0; left:0; height:6px; background:var(--cinza-medio); }
+  .tempo-bar { height:100%; background:var(--amarelo); width:100%; transition:width linear; border-radius:0 0 0 20px; }
+  .tempo-bar.urgente { background:var(--vermelho); }
+
+  .sinal-central { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .sinal-icone-big { font-size:100px; line-height:1; }
+  .sinal-label { font-size:13px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--texto-muted); }
+
+  .jogo-botoes { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+  .btn-jogo { padding:18px 12px; border-radius:14px; border:none; font-size:24px; cursor:pointer; font-family:'Inter',sans-serif; font-weight:700; transition:transform 0.1s,opacity 0.1s; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .btn-jogo span { font-size:13px; font-weight:700; }
+  .btn-jogo:active { transform:scale(0.94); }
+  .btn-sim { background:var(--verde); color:#fff; }
+  .btn-nao { background:var(--vermelho); color:#fff; }
+  .btn-jogo:disabled { opacity:0.35; cursor:not-allowed; }
+
+  .jogo-placar { display:flex; justify-content:space-between; margin-bottom:14px; gap:8px; }
+  .placar-item { background:var(--cinza-card); border-radius:12px; padding:10px 14px; text-align:center; flex:1; }
+  .placar-num { font-size:22px; font-weight:800; color:var(--amarelo); }
+  .placar-label { font-size:10px; color:var(--texto-muted); margin-top:2px; }
+
+  /* RESULTADO */
+  .resultado-wrap { text-align:center; padding:10px 0; }
+  .resultado-icone { font-size:80px; margin-bottom:16px; display:block; }
+  .resultado-titulo { font-size:26px; font-weight:800; margin-bottom:10px; }
+  .resultado-sub { font-size:15px; line-height:1.6; margin-bottom:24px; }
+  .resultado-verde { color:var(--verde); }
+  .resultado-vermelho { color:var(--vermelho); }
+  .detalhes-card { background:var(--cinza-card); border-radius:16px; padding:18px; margin-bottom:16px; text-align:left; }
+  .detalhe-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.07); font-size:14px; }
+  .detalhe-item:last-child { border-bottom:none; }
+  .detalhe-label { color:var(--texto-muted); }
+  .badge-ok { background:rgba(46,204,113,0.2); color:var(--verde); border-radius:6px; padding:2px 10px; font-size:12px; font-weight:700; }
+  .badge-atencao { background:rgba(231,76,60,0.2); color:var(--vermelho); border-radius:6px; padding:2px 10px; font-size:12px; font-weight:700; }
+  .badge-medio { background:rgba(243,156,18,0.2); color:var(--laranja); border-radius:6px; padding:2px 10px; font-size:12px; font-weight:700; }
+  .aviso-bloqueio { background:rgba(231,76,60,0.15); border:2px solid var(--vermelho); border-radius:14px; padding:18px; margin-bottom:20px; font-size:15px; font-weight:600; color:var(--vermelho); text-align:center; }
+  .notif-supervisor { background:var(--cinza-card); border-left:4px solid var(--laranja); border-radius:12px; padding:16px; margin-bottom:16px; font-size:14px; color:var(--branco); }
+  .notif-titulo { font-weight:700; color:var(--laranja); margin-bottom:4px; }
+  .btn-whatsapp { width:100%; padding:16px; background:#25D366; color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; text-decoration:none; margin-top:10px; }
+  .btn-whatsapp:hover { background:#1ebe5a; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="header-icon">🏭</span>
+  <div>
+    <div class="header-title">TESTE DE PRONTIDÃO</div>
+    <div class="header-sub">Operação de Empilhadeira</div>
+  </div>
+</div>
+
+<!-- TELA: BOAS VINDAS -->
+<div class="tela ativa" id="tela-bv">
+  <div class="bv-wrap">
+    <span class="bv-icon">⚠️</span>
+    <div class="bv-titulo">Antes de começar o turno</div>
+    <div class="bv-sub">Esse teste garante que você está em condições seguras para operar hoje. Leva menos de 2 minutos. Responda com honestidade!</div>
+    <input class="input-nome" id="input-nome" type="text" placeholder="Seu nome completo" />
+    <button class="btn-avancar" onclick="iniciarTeste()">Começar teste →</button>
+  </div>
+</div>
+
+<!-- TELA: PERGUNTAS -->
+<div class="tela" id="tela-perguntas">
+  <div class="progresso-wrap">
+    <div class="progresso-label">
+      <span id="prog-label">Pergunta 1 de 8</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="barra-bg"><div class="barra-fill" id="barra-fill" style="width:0%"></div></div>
+  </div>
+  <div id="pergunta-container"></div>
+  <button class="btn-avancar" id="btn-avancar" disabled onclick="avancarPergunta()">Próxima →</button>
+</div>
+
+<!-- TELA: JOGO -->
+<div class="tela" id="tela-jogo">
+  <div class="jogo-titulo">🎯 Teste de Percepção de Risco</div>
+  <div class="jogo-instrucao">
+    Reaja rápido ao sinal! Se não responder a tempo, perde o ponto.<br>
+    🛑 <strong>PARAR</strong> = Sinal de perigo &nbsp;|&nbsp; ▶️ <strong>SEGUIR</strong> = Via livre
+  </div>
+
+  <div class="jogo-placar">
+    <div class="placar-item"><div class="placar-num" id="placar-acertos">0</div><div class="placar-label">Acertos</div></div>
+    <div class="placar-item"><div class="placar-num" id="placar-erros">0</div><div class="placar-label">Erros</div></div>
+    <div class="placar-item"><div class="placar-num" id="placar-rodada">0/8</div><div class="placar-label">Rodada</div></div>
+  </div>
+
+  <div class="jogo-area" id="jogo-area">
+    <div class="jogo-countdown" id="jogo-countdown">3</div>
+  </div>
+
+  <div class="jogo-botoes">
+    <button class="btn-jogo btn-nao" id="btn-parar" disabled onclick="responderJogo('parar')">🛑<span>PARAR</span></button>
+    <button class="btn-jogo btn-sim" id="btn-seguir" disabled onclick="responderJogo('seguir')">▶️<span>SEGUIR</span></button>
+  </div>
+</div>
+
+<!-- TELA: RESULTADO -->
+<div class="tela" id="tela-resultado">
+  <div class="resultado-wrap" id="resultado-conteudo"></div>
+</div>
+
+<script>
+// =================== PERGUNTAS ===================
+const perguntas = [
+  { id:'sono', icone:'😴', texto:'Como você dormiu essa noite?', tipo:'opcoes', opcoes:[
+    {icone:'😴',label:'Bem — dormi mais de 6 horas',valor:'ok'},
+    {icone:'😐',label:'Mais ou menos — dormi pouco',valor:'atencao'},
+    {icone:'😩',label:'Mal — quase não dormi',valor:'critico'},
+  ]},
+  { id:'alimentacao', icone:'🍽️', texto:'Você se alimentou antes de começar o turno?', tipo:'opcoes', opcoes:[
+    {icone:'✅',label:'Sim, me alimentei bem',valor:'ok'},
+    {icone:'😐',label:'Comi pouca coisa',valor:'atencao'},
+    {icone:'❌',label:'Não comi nada',valor:'critico'},
+  ]},
+  { id:'alcool', icone:'🍺', texto:'Você consumiu bebida alcoólica nas últimas 12 horas?', tipo:'opcoes', opcoes:[
+    {icone:'✅',label:'Não consumi',valor:'ok'},
+    {icone:'⚠️',label:'Consumi uma quantidade pequena',valor:'critico'},
+    {icone:'🚫',label:'Consumi bastante',valor:'critico'},
+  ]},
+  { id:'medicamento', icone:'💊', texto:'Tomou algum remédio que pode causar sonolência?', tipo:'opcoes', opcoes:[
+    {icone:'✅',label:'Não',valor:'ok'},
+    {icone:'⚠️',label:'Sim, tomei',valor:'critico'},
+    {icone:'🤷',label:'Não sei dizer',valor:'atencao'},
+  ]},
+  { id:'emocional', icone:'🧠', texto:'Como está seu estado emocional agora?', tipo:'opcoes', opcoes:[
+    {icone:'😊',label:'Bem, tranquilo(a)',valor:'ok'},
+    {icone:'😐',label:'Um pouco estressado(a) ou preocupado(a)',valor:'atencao'},
+    {icone:'😰',label:'Muito agitado(a) ou abalado(a)',valor:'critico'},
+  ]},
+  { id:'dor', icone:'🤕', texto:'Está sentindo dor ou desconforto físico?', tipo:'opcoes', opcoes:[
+    {icone:'✅',label:'Não, estou bem',valor:'ok'},
+    {icone:'😐',label:'Uma dorzinha, mas suportável',valor:'atencao'},
+    {icone:'😣',label:'Sim, dor forte',valor:'critico'},
+  ]},
+  { id:'disposicao', icone:'⚡', texto:'Como está sua disposição hoje?', tipo:'slider',
+    min:1, max:10,
+    labels:['Sem energia','Cheio de energia'],
+    descricoes:{1:'Muito cansado(a)',2:'Muito cansado(a)',3:'Bastante cansado(a)',4:'Pouco disposto(a)',5:'Regular',6:'Razoável',7:'Bem disposto(a)',8:'Bem disposto(a)',9:'Ótimo!',10:'Excelente!'}
+  },
+  { id:'concentracao', icone:'🎯', texto:'Você se sente concentrado(a) para trabalhar agora?', tipo:'opcoes', opcoes:[
+    {icone:'✅',label:'Sim, estou focado(a)',valor:'ok'},
+    {icone:'😐',label:'Mais ou menos',valor:'atencao'},
+    {icone:'❌',label:'Não, estou disperso(a)',valor:'critico'},
+  ]},
+];
+
+const sinais = [
+  {icone:'🚨',label:'PERIGO!',resposta:'parar'},
+  {icone:'✅',label:'VIA LIVRE',resposta:'seguir'},
+  {icone:'⛔',label:'PROIBIDO PASSAR',resposta:'parar'},
+  {icone:'🟢',label:'PASSAGEM LIBERADA',resposta:'seguir'},
+  {icone:'⚠️',label:'RISCO NA ÁREA',resposta:'parar'},
+  {icone:'🔓',label:'ÁREA SEGURA',resposta:'seguir'},
+  {icone:'🚧',label:'BLOQUEADO',resposta:'parar'},
+  {icone:'🏁',label:'LIVRE PARA AVANÇAR',resposta:'seguir'},
+];
+
+const TEMPO_LIMITE = 1000; // 1 segundo
+const TOTAL_RODADAS = 8;
+const WHATSAPP_CONTATOS = [
+  { nome: 'Técnico de Segurança', num: '5511982956679' },
+  { nome: 'Líder',                num: '5511911558905' },
+  { nome: 'Encarregado',         num: '5511932560907' },
+];
+
+let nomeOperador = '';
+let respostas = {};
+let perguntaAtual = 0;
+
+let jogoRodadas = [];
+let jogoIndice = 0;
+let jogoAcertos = 0;
+let jogoErros = 0;
+let jogoTempos = [];
+let jogoTempInicio = null;
+let jogoAtivo = false;
+let jogoTimer = null;
+let barraTimer = null;
+
+// =================== TELAS ===================
+function mostrarTela(id) {
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  document.getElementById(id).classList.add('ativa');
+}
+
+function iniciarTeste() {
+  nomeOperador = document.getElementById('input-nome').value.trim();
+  if (!nomeOperador) {
+    document.getElementById('input-nome').style.borderColor = 'var(--vermelho)';
+    document.getElementById('input-nome').placeholder = '⚠️ Digite seu nome para continuar';
+    return;
+  }
+  mostrarTela('tela-perguntas');
+  renderPergunta();
+}
+
+// =================== PERGUNTAS ===================
+function renderPergunta() {
+  const p = perguntas[perguntaAtual];
+  const total = perguntas.length;
+  const pct = Math.round((perguntaAtual / total) * 100);
+  document.getElementById('prog-label').textContent = `Pergunta ${perguntaAtual+1} de ${total}`;
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('barra-fill').style.width = pct + '%';
+  document.getElementById('btn-avancar').disabled = p.tipo !== 'slider';
+
+  let html = `<span class="pergunta-icone">${p.icone}</span>
+              <div class="pergunta-num">PERGUNTA ${perguntaAtual+1}</div>
+              <div class="pergunta-texto">${p.texto}</div>`;
+
+  if (p.tipo === 'opcoes') {
+    html += '<div class="opcoes">';
+    p.opcoes.forEach((op,i) => {
+      html += `<button class="opcao-btn" onclick="selecionarOpcao(${i},'${op.valor}')" id="op-${i}">
+                 <span class="opcao-icone">${op.icone}</span>${op.label}
+               </button>`;
+    });
+    html += '</div>';
+  } else {
+    const val = respostas[p.id]?.raw || 5;
+    html += `<div class="slider-wrap">
+               <div class="slider-valor" id="slider-val">${val}</div>
+               <div class="slider-descricao" id="slider-desc">${p.descricoes[val]}</div>
+               <input type="range" min="${p.min}" max="${p.max}" value="${val}"
+                 oninput="atualizarSlider(this.value)" onchange="atualizarSlider(this.value)" />
+               <div class="slider-labels"><span>${p.labels[0]}</span><span>${p.labels[1]}</span></div>
+             </div>`;
+    respostas[p.id] = {valor: val<=3?'critico':val<=5?'atencao':'ok', raw:val};
+  }
+  document.getElementById('pergunta-container').innerHTML = html;
+}
+
+function selecionarOpcao(idx, valor) {
+  document.querySelectorAll('.opcao-btn').forEach(b => b.classList.remove('selecionada'));
+  document.getElementById('op-'+idx).classList.add('selecionada');
+  const p = perguntas[perguntaAtual];
+  respostas[p.id] = {valor, raw:idx};
+  document.getElementById('btn-avancar').disabled = false;
+}
+
+function atualizarSlider(val) {
+  val = parseInt(val);
+  const p = perguntas[perguntaAtual];
+  document.getElementById('slider-val').textContent = val;
+  document.getElementById('slider-desc').textContent = p.descricoes[val];
+  respostas[p.id] = {valor: val<=3?'critico':val<=5?'atencao':'ok', raw:val};
+  document.getElementById('btn-avancar').disabled = false;
+}
+
+function avancarPergunta() {
+  perguntaAtual++;
+  if (perguntaAtual >= perguntas.length) iniciarJogo();
+  else renderPergunta();
+}
+
+// =================== JOGO ===================
+function iniciarJogo() {
+  mostrarTela('tela-jogo');
+  jogoRodadas = [];
+  // garante mix equilibrado
+  const embaralhado = [...sinais].sort(() => Math.random()-0.5);
+  for (let i = 0; i < TOTAL_RODADAS; i++) jogoRodadas.push(embaralhado[i % embaralhado.length]);
+  jogoIndice=0; jogoAcertos=0; jogoErros=0; jogoTempos=[];
+
+  document.getElementById('btn-parar').disabled = true;
+  document.getElementById('btn-seguir').disabled = true;
+  document.getElementById('placar-acertos').textContent = '0';
+  document.getElementById('placar-erros').textContent = '0';
+  document.getElementById('placar-rodada').textContent = '0/'+TOTAL_RODADAS;
+
+  let c = 3;
+  document.getElementById('jogo-countdown').textContent = c;
+  document.getElementById('jogo-countdown').style.display = 'block';
+
+  const iv = setInterval(() => {
+    c--;
+    if (c <= 0) {
+      clearInterval(iv);
+      document.getElementById('jogo-countdown').style.display = 'none';
+      jogoAtivo = true;
+      document.getElementById('btn-parar').disabled = false;
+      document.getElementById('btn-seguir').disabled = false;
+      mostrarSinal();
+    } else {
+      document.getElementById('jogo-countdown').textContent = c;
+    }
+  }, 900);
+}
+
+function mostrarSinal() {
+  if (jogoIndice >= TOTAL_RODADAS) { finalizarJogo(); return; }
+  const sinal = jogoRodadas[jogoIndice];
+  jogoTempInicio = Date.now();
+
+  document.getElementById('jogo-area').innerHTML = `
+    <div class="sinal-central">
+      <div class="sinal-icone-big">${sinal.icone}</div>
+      <div class="sinal-label">${sinal.label}</div>
+    </div>
+    <div class="tempo-bar-wrap"><div class="tempo-bar" id="tempo-bar"></div></div>
+  `;
+
+  document.getElementById('btn-parar').disabled = false;
+  document.getElementById('btn-seguir').disabled = false;
+
+  // Animar barra de tempo
+  const bar = document.getElementById('tempo-bar');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  setTimeout(() => {
+    bar.style.transition = `width ${TEMPO_LIMITE}ms linear`;
+    bar.style.width = '0%';
+    setTimeout(() => { if(bar) bar.classList.add('urgente'); }, TEMPO_LIMITE * 0.5);
+  }, 30);
+
+  // Timer automático — se não responder, perde
+  clearTimeout(jogoTimer);
+  jogoTimer = setTimeout(() => {
+    if (!jogoAtivo) return;
+    jogoErros++;
+    document.getElementById('placar-erros').textContent = jogoErros;
+    mostrarFeedbackArea('⏱️ LENTO!', 'var(--laranja)');
+    jogoTempos.push(TEMPO_LIMITE);
+    jogoIndice++;
+    document.getElementById('btn-parar').disabled = true;
+    document.getElementById('btn-seguir').disabled = true;
+    atualizarPlacarRodada();
+    setTimeout(() => {
+      if (jogoIndice < TOTAL_RODADAS) mostrarSinal();
+      else finalizarJogo();
+    }, 800);
+  }, TEMPO_LIMITE);
+}
+
+function responderJogo(resposta) {
+  if (!jogoAtivo || jogoIndice >= TOTAL_RODADAS) return;
+  clearTimeout(jogoTimer);
+  document.getElementById('btn-parar').disabled = true;
+  document.getElementById('btn-seguir').disabled = true;
+
+  const sinal = jogoRodadas[jogoIndice];
+  const tempo = Date.now() - jogoTempInicio;
+  jogoTempos.push(tempo);
+
+  const correto = resposta === sinal.resposta;
+  if (correto) { jogoAcertos++; mostrarFeedbackArea('✅ CERTO!', 'var(--verde)'); }
+  else { jogoErros++; mostrarFeedbackArea('❌ ERRADO!', 'var(--vermelho)'); }
+
+  document.getElementById('placar-acertos').textContent = jogoAcertos;
+  document.getElementById('placar-erros').textContent = jogoErros;
+  jogoIndice++;
+  atualizarPlacarRodada();
+
+  setTimeout(() => {
+    if (jogoIndice < TOTAL_RODADAS) mostrarSinal();
+    else finalizarJogo();
+  }, 700);
+}
+
+function mostrarFeedbackArea(texto, cor) {
+  document.getElementById('jogo-area').innerHTML = `
+    <div style="text-align:center">
+      <div style="font-size:42px;font-weight:800;color:${cor}">${texto}</div>
+    </div>
+  `;
+}
+
+function atualizarPlacarRodada() {
+  document.getElementById('placar-rodada').textContent = jogoIndice + '/' + TOTAL_RODADAS;
+}
+
+function finalizarJogo() {
+  jogoAtivo = false;
+  document.getElementById('jogo-area').innerHTML = `<div style="text-align:center;font-size:48px">✅<br><span style="font-size:18px;color:var(--verde);font-weight:700">Concluído!</span></div>`;
+  document.getElementById('btn-parar').disabled = true;
+  document.getElementById('btn-seguir').disabled = true;
+  setTimeout(() => mostrarResultado(), 900);
+}
+
+// =================== RESULTADO ===================
+function mostrarResultado() {
+  mostrarTela('tela-resultado');
+
+  // LÓGICA DE APROVAÇÃO
+  // Bloqueado apenas se: bebeu muito OU emocional totalmente abalado OU jogo < 70%
+  const pctAcertos = Math.round((jogoAcertos/TOTAL_RODADAS)*100);
+  const jogoReprovado = pctAcertos < 70;
+  const mediaTempo = jogoTempos.length > 0 ? Math.round(jogoTempos.reduce((a,b)=>a+b,0)/jogoTempos.length) : 0;
+
+  // Fatores que bloqueiam independente do jogo
+  const bebeuMuito = respostas.alcool?.raw === 2; // terceira opção: "Consumi bastante"
+  const emocionaltotalmenteAbalado = respostas.emocional?.raw === 2; // terceira opção: "Muito agitado/abalado"
+  const bloqueadoPorPerguntas = bebeuMuito || emocionaltotalmenteAbalado;
+
+  const bloqueado = jogoReprovado || bloqueadoPorPerguntas;
+
+  // Tem alguma resposta de atenção/ruim (mas não bloqueante)?
+  const temAlgumaRuim = Object.entries(respostas).some(([k,v]) => v.valor === 'atencao' || (v.valor === 'critico' && !bloqueadoPorPerguntas));
+  const liberadoComAviso = !bloqueado && temAlgumaRuim;
+  const liberadoTotal = !bloqueado && !temAlgumaRuim;
+
+  const hora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const data = new Date().toLocaleDateString('pt-BR');
+
+  function badge(id) {
+    const v = respostas[id]?.valor;
+    if (!v || v==='ok') return '<span class="badge-ok">OK</span>';
+    if (v==='atencao') return '<span class="badge-medio">ATENÇÃO</span>';
+    return '<span class="badge-atencao">RISCO</span>';
+  }
+
+  const textoResposta = {
+    sono: {ok:'Dormiu bem (mais de 6h)', atencao:'Dormiu pouco', critico:'Quase não dormiu'},
+    alimentacao: {ok:'Se alimentou bem', atencao:'Comeu pouca coisa', critico:'Não comeu nada'},
+    alcool: {ok:'Não consumiu álcool', atencao:'Consumiu pouco', critico:'Consumiu bastante álcool'},
+    medicamento: {ok:'Não tomou medicamento', atencao:'Não sabe se causa sonolência', critico:'Tomou remédio que causa sonolência'},
+    emocional: {ok:'Está bem e tranquilo(a)', atencao:'Um pouco estressado(a)', critico:'Muito agitado(a) / abalado(a)'},
+    dor: {ok:'Sem dor ou desconforto', atencao:'Dorzinha suportável', critico:'Dor forte'},
+    concentracao: {ok:'Está focado(a)', atencao:'Concentração mais ou menos', critico:'Está disperso(a)'}
+  };
+
+  function getRespTexto(id) {
+    const v = respostas[id]?.valor;
+    if (!v) return '—';
+    if (id === 'disposicao') return 'Disposição ' + (respostas.disposicao?.raw||'—') + '/10' + (v==='critico'?' (muito baixa)':v==='atencao'?' (baixa)':' (boa)');
+    return (textoResposta[id]?.[v]) || '—';
+  }
+
+  const mapa = {
+    sono:'😴 Sono', alimentacao:'🍽️ Alimentação', alcool:'🍺 Álcool/Drogas',
+    medicamento:'💊 Medicamento', emocional:'🧠 Emocional', dor:'🤕 Dor Física',
+    disposicao:'⚡ Disposição', concentracao:'🎯 Concentração'
+  };
+
+  let itens = '';
+  for (const [k,l] of Object.entries(mapa)) {
+    const v = respostas[k]?.valor || 'ok';
+    const resp = getRespTexto(k);
+    itens += '<div class="detalhe-item"><span class="detalhe-label">'+l+'</span>' +
+      '<div style="text-align:right"><div>'+badge(k)+'</div>' +
+      '<div style="font-size:11px;color:'+(v==='ok'?'var(--texto-muted)':v==='atencao'?'var(--laranja)':'var(--vermelho)')+'">'+resp+'</div></div></div>';
+  }
+
+  const jogoBadge = pctAcertos>=88 ? '<span class="badge-ok">Excelente</span>'
+    : pctAcertos>=70 ? '<span class="badge-medio">Aprovado</span>'
+    : '<span class="badge-atencao">Reprovado</span>';
+
+  const status = liberadoTotal ? '✅ APROVADO' : liberadoComAviso ? '⚠️ LIBERADO C/ AVISO' : '🚫 BLOQUEADO';
+  const motivo = bebeuMuito ? 'Consumo de álcool nas últimas 12h'
+    : emocionaltotalmenteAbalado ? 'Estado emocional totalmente abalado'
+    : jogoReprovado ? 'Percepção de risco abaixo de 70% ('+jogoAcertos+'/'+TOTAL_RODADAS+' acertos)'
+    : '';
+
+  const msgTexto =
+'🏭 TESTE DE PRONTIDÃO OPERACIONAL\n' +
+'━━━━━━━━━━━━━━━━━━\n' +
+'👤 Operador: ' + nomeOperador + '\n' +
+'📅 ' + data + ' às ' + hora + '\n' +
+'━━━━━━━━━━━━━━━━━━\n' +
+'📋 RESULTADO: ' + status + '\n' +
+(motivo ? '⚠️ Motivo: ' + motivo + '\n' : '') +
+(liberadoComAviso ? '💬 Operador deve conversar com líder antes de operar.\n' : '') +
+'\n--- RESPOSTAS ---\n' +
+'😴 Sono: ' + getRespTexto('sono') + '\n' +
+'🍽️ Alimentação: ' + getRespTexto('alimentacao') + '\n' +
+'🍺 Álcool: ' + getRespTexto('alcool') + '\n' +
+'💊 Medicamento: ' + getRespTexto('medicamento') + '\n' +
+'🧠 Emocional: ' + getRespTexto('emocional') + '\n' +
+'🤕 Dor: ' + getRespTexto('dor') + '\n' +
+'⚡ Disposição: ' + (respostas.disposicao?.raw||'—') + '/10\n' +
+'🎯 Concentração: ' + getRespTexto('concentracao') + '\n' +
+'\n--- JOGO DE PERCEPÇÃO ---\n' +
+'🎮 Acertos: ' + jogoAcertos + '/' + TOTAL_RODADAS + ' (' + pctAcertos + '%)\n' +
+'⏱️ Tempo médio: ' + (mediaTempo>0?(mediaTempo/1000).toFixed(1)+'s':'—') + '\n' +
+'━━━━━━━━━━━━━━━━━━';
+
+  const msg = encodeURIComponent(msgTexto);
+  const grupoLink = 'https://chat.whatsapp.com/ItLodL5Qggm4ekrv2zrBY7';
+
+  const svgWpp = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
+
+  // Botão grupo WhatsApp
+  const btnGrupo = '<button class="btn-whatsapp" id="btn-enviar-grupo" onclick="copiarEAbrirGrupo(this, \'' + msg + '\'  )">' + svgWpp + ' Enviar resultado ao grupo</button>';
+
+  let html = '';
+  if (liberadoTotal) {
+    html += '<span class="resultado-icone">✅</span>' +
+      '<div class="resultado-titulo resultado-verde">LIBERADO PARA OPERAR</div>' +
+      '<div class="resultado-sub">Você está em condições de iniciar o turno. Trabalhe com atenção e segurança, ' + nomeOperador.split(' ')[0] + '!</div>';
+  } else if (liberadoComAviso) {
+    html += '<span class="resultado-icone">⚠️</span>' +
+      '<div class="resultado-titulo" style="color:var(--laranja)">LIBERADO — CONVERSE COM SEU LÍDER</div>' +
+      '<div class="resultado-sub">Você pode trabalhar hoje, mas seu teste indicou alguns pontos de atenção.</div>' +
+      '<div style="background:rgba(243,156,18,0.15);border:2px solid var(--laranja);border-radius:14px;padding:16px;margin-bottom:20px;font-size:15px;font-weight:600;color:var(--laranja);text-align:center">⚠️ Antes de iniciar, converse com seu líder sobre como está se sentindo</div>';
+  } else {
+    html += '<span class="resultado-icone">🚫</span>' +
+      '<div class="resultado-titulo resultado-vermelho">OPERAÇÃO BLOQUEADA</div>' +
+      '<div class="resultado-sub">Você não está em condições seguras para operar hoje.</div>' +
+      '<div class="aviso-bloqueio">⛔ ' + motivo + '<br><br>Aguarde orientação do seu supervisor.</div>';
+  }
+
+  html +=
+    '<div class="detalhes-card">' +
+      '<div style="font-size:13px;font-weight:700;color:var(--amarelo);margin-bottom:12px">📋 DETALHES DO TESTE</div>' +
+      itens +
+      '<div class="detalhe-item"><span class="detalhe-label">🎮 Percepção de risco ('+jogoAcertos+'/'+TOTAL_RODADAS+')</span>' +
+        '<div style="text-align:right"><div>'+jogoBadge+'</div>' +
+        '<div style="font-size:11px;color:var(--texto-muted)">'+pctAcertos+'% · '+(mediaTempo>0?(mediaTempo/1000).toFixed(1)+'s':'—')+' médio</div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--texto-muted);text-align:center;margin-bottom:14px">'+nomeOperador+' · '+data+' '+hora+'</div>' +
+    btnGrupo;
+
+  document.getElementById('resultado-conteudo').innerHTML = html;
+}
+
+function copiarEAbrirGrupo(btn, msg) {
+  const texto = decodeURIComponent(msg);
+  const grupoUrl = 'https://chat.whatsapp.com/ItLodL5Qggm4ekrv2zrBY7';
+
+  function abrirGrupo() {
+    window.open(grupoUrl, '_blank');
+    btn.innerHTML = '✅ Resultado copiado! Cole no grupo agora';
+    btn.style.background = '#128C7E';
+    btn.disabled = true;
+  }
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(texto).then(abrirGrupo).catch(() => {
+      const el = document.createElement('textarea');
+      el.value = texto;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      abrirGrupo();
+    });
+  } else {
+    const el = document.createElement('textarea');
+    el.value = texto;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    abrirGrupo();
+  }
+}
+
+function enviarParaTodos(msg) {
+  const nums = WHATSAPP_CONTATOS.map(c => c.num);
+  let i = 0;
+  function abrirProximo() {
+    if (i >= nums.length) return;
+    window.open('https://wa.me/' + nums[i] + '?text=' + msg, '_blank');
+    i++;
+    if (i < nums.length) setTimeout(abrirProximo, 1200);
+  }
+  abrirProximo();
+}
+</script>
+</body>
+</html>
